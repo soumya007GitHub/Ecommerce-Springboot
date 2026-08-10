@@ -51,6 +51,9 @@ public class Product {
     @Column(nullable = false)
     private List<ProductResource> listResources;
 
+    @Column
+    private float rating;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

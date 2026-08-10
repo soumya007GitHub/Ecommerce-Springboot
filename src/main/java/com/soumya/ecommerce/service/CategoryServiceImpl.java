@@ -17,6 +17,17 @@ public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
 
+
+    @Override
+    public List<CategoryDTO> getCategories() {
+
+        List<Category> categories = categoryRepository.findAll();
+
+        return categories.stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
+
     @Override
     public CategoryDTO getCategory(UUID categoryId) {
 
@@ -39,6 +50,30 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    public CategoryDTO updateCategory(UUID categoryId, CategoryDTO categoryDTO) {
+
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() ->
+                        new RuntimeException("Category not found with id: " + categoryId)
+                );
+
+        category.setName(categoryDTO.getName());
+        category.setDescription(categoryDTO.getDescription());
+
+        List<CategoryType> categoryTypes =
+                mapToCategoryTypes(
+                        categoryDTO.getCategoryTypes(),
+                        category
+                );
+
+        category.setCategoryTypeList(categoryTypes);
+
+        Category updatedCategory = categoryRepository.save(category);
+
+        return mapToDTO(updatedCategory);
+    }
+
+    @Override
     public Category mapToEntity(CategoryDTO categoryDTO) {
 
         Category category = new Category();
@@ -55,6 +90,17 @@ public class CategoryServiceImpl implements CategoryService {
         category.setCategoryTypeList(categoryTypes);
 
         return category;
+    }
+
+    @Override
+    public void deleteCategory(UUID categoryId) {
+
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() ->
+                        new RuntimeException("Category not found with id: " + categoryId)
+                );
+
+        categoryRepository.delete(category);
     }
 
     @Override
@@ -85,19 +131,11 @@ public class CategoryServiceImpl implements CategoryService {
                 .toList();
     }
 
-    private CategoryDTO mapToDTO(Category category) {
+    @Override
+    public CategoryDTO mapToDTO(Category category) {
 
         List<CategoryTypeDTO> categoryTypes =
-                category.getCategoryTypeList()
-                        .stream()
-                        .map(categoryType ->
-                                CategoryTypeDTO.builder()
-                                        .id(categoryType.getId())
-                                        .name(categoryType.getName())
-                                        .description(categoryType.getDescription())
-                                        .build()
-                        )
-                        .toList();
+                mapToCategoryTypeDTOs(category.getCategoryTypeList());
 
         return CategoryDTO.builder()
                 .id(category.getId())
@@ -105,5 +143,23 @@ public class CategoryServiceImpl implements CategoryService {
                 .description(category.getDescription())
                 .categoryTypes(categoryTypes)
                 .build();
+    }
+
+    @Override
+    public List<CategoryTypeDTO> mapToCategoryTypeDTOs(
+            List<CategoryType> categoryTypes
+    ) {
+
+        if (categoryTypes == null) {
+            return List.of();
+        }
+
+        return categoryTypes.stream()
+                .map(categoryType -> CategoryTypeDTO.builder()
+                        .id(categoryType.getId())
+                        .name(categoryType.getName())
+                        .description(categoryType.getDescription())
+                        .build())
+                .toList();
     }
 }

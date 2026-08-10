@@ -12,12 +12,24 @@ public interface CategoryService {
 
     CategoryDTO getCategory(UUID categoryId);
 
+    List<CategoryDTO> getCategories();
+
     CategoryDTO createCategory(CategoryDTO categoryDTO);
 
+    CategoryDTO updateCategory(UUID categoryId, CategoryDTO categoryDTO);
+
+    void deleteCategory(UUID categoryId);
+
     Category mapToEntity(CategoryDTO categoryDTO);
+
+    CategoryDTO mapToDTO(Category category);
 
     List<CategoryType> mapToCategoryTypes(
             List<CategoryTypeDTO> categoryTypeDTOList,
             Category category
+    );
+
+    List<CategoryTypeDTO> mapToCategoryTypeDTOs(
+            List<CategoryType> categoryTypes
     );
 }
