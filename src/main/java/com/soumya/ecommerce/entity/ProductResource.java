@@ -5,17 +5,15 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "products")
+@Table(name = "product_resources")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Product {
+public class ProductResource {
 
     @Id
     @GeneratedValue
@@ -24,32 +22,18 @@ public class Product {
     @Column(nullable = false)
     private String name;
 
-    @Column(length = 3000)
-    private String description;
+    @Column(nullable = false, length = 2048)
+    private String url;
 
     @Column(nullable = false)
-    private BigDecimal price;
+    private Boolean isPrimary;
 
     @Column(nullable = false)
-    private String brand;
+    private String type;
 
-    @Column(nullable = false)
-    private Boolean isNewArrival;
-
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
-    private List<ProductVariant> productVariantList;
-
-    @ManyToOne
-    @JoinColumn(name="category_id", nullable = false)
-    private Category category;
-
-    @ManyToOne
-    @JoinColumn(name="categoryType_id", nullable = false)
-    private CategoryType categoryType;
-
-    @OneToMany(mappedBy = "product")
-    @Column(nullable = false)
-    private List<ProductResource> listResources;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -68,5 +52,4 @@ public class Product {
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
-
 }
