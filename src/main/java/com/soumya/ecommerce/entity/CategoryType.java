@@ -5,17 +5,15 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "products")
+@Table(name = "category_types")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Product {
+public class CategoryType {
 
     @Id
     @GeneratedValue
@@ -27,23 +25,9 @@ public class Product {
     @Column(length = 3000)
     private String description;
 
-    @Column(nullable = false)
-    private BigDecimal price;
-
-    @Column(nullable = false)
-    private String brand;
-
-    @Column(nullable = false)
-    private Boolean isNewArrival;
-
-    @OneToMany(mappedBy = "product")
-    private List<ProductVariant> productVariantList;
-
-    @Column(nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
     private Category category;
-
-    @Column(nullable = false)
-    private CategoryType categoryType;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -62,5 +46,4 @@ public class Product {
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
-
 }
