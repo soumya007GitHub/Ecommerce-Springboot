@@ -39,10 +39,12 @@ public class Product {
     @OneToMany(mappedBy = "product")
     private List<ProductVariant> productVariantList;
 
-    @Column(nullable = false)
+    @ManyToOne
+    @JoinColumn(name="category_id", nullable = false)
     private Category category;
 
-    @Column(nullable = false)
+    @ManyToOne
+    @JoinColumn(name="categoryType_id", nullable = false)
     private CategoryType categoryType;
 
     @Column(nullable = false, updatable = false)
