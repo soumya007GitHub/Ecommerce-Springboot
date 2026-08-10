@@ -1,28 +1,35 @@
 package com.soumya.ecommerce.controller;
 
 import com.soumya.ecommerce.dto.ProductDTO;
+import com.soumya.ecommerce.service.ProductServiceImpl;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/products")
+@RequiredArgsConstructor
 public class ProductController {
+    private final ProductServiceImpl productService;
     @GetMapping
-    public ResponseEntity<?> getAllProducts() {
-
-        return ResponseEntity.ok("Get All Products API");
+    public ResponseEntity<List<ProductDTO>> getAllProducts() {
+        return ResponseEntity.status(HttpStatus.OK).body(productService.getProducts());
     }
-    @GetMapping("/{productId}")
-    public ResponseEntity<?> getProductDetails(
-            @PathVariable Long productId) {
-
-        return ResponseEntity.ok("Get Product Details API : " + productId);
-    }
+//    @GetMapping("/{productId}")
+//    public ResponseEntity<ProductDTO> getProductDetails(
+//            @PathVariable Long productId) {
+//
+//        return ResponseEntity.status(HttpStatus.OK).body();
+//    }
     @PostMapping
-    public ResponseEntity<?> addProduct(
+    public ResponseEntity<ProductDTO> addProduct(
             @RequestBody ProductDTO productDTO) {
 
-        return ResponseEntity.ok("Add Product API");
+        return ResponseEntity.ok(productService.addProduct(productDTO));
     }
 
     @PutMapping("/{productId}")
