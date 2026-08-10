@@ -1,209 +1,105 @@
 package com.soumya.ecommerce.service;
 
 import com.soumya.ecommerce.dto.ProductDTO;
-import com.soumya.ecommerce.dto.ProductResourceDTO;
-import com.soumya.ecommerce.dto.ProductVariantDTO;
+import com.soumya.ecommerce.entity.Category;
+import com.soumya.ecommerce.entity.CategoryType;
 import com.soumya.ecommerce.entity.Product;
-import com.soumya.ecommerce.entity.ProductResource;
-import com.soumya.ecommerce.entity.ProductVariant;
+import com.soumya.ecommerce.exception.ResourceNotFoundException;
+import com.soumya.ecommerce.mapper.ProductMapper;
+import com.soumya.ecommerce.repository.CategoryRepository;
+import com.soumya.ecommerce.repository.CategoryTypeRepository;
 import com.soumya.ecommerce.repository.ProductRepository;
+import com.soumya.ecommerce.specification.ProductSpecification;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.math.BigDecimal;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
+    private final CategoryTypeRepository categoryTypeRepository;
+    private final ProductMapper productMapper;
 
     @Override
     public ProductDTO addProduct(ProductDTO productDTO) {
 
-        Product product = new Product();
+        Category category = categoryRepository.findById(productDTO.getCategoryId())
+                .orElseThrow(() -> ResourceNotFoundException.of("Category", productDTO.getCategoryId()));
 
-        product.setName(productDTO.getName());
+        CategoryType categoryType = categoryTypeRepository.findById(productDTO.getCategoryTypeId())
+                .orElseThrow(() -> ResourceNotFoundException.of("CategoryType", productDTO.getCategoryTypeId()));
+
+        Product product = productMapper.toEntity(productDTO, category, categoryType);
 
         Product savedProduct = productRepository.save(product);
 
-        ProductDTO response = new ProductDTO();
-
-        response.setId(savedProduct.getId());
-        response.setName(savedProduct.getName());
-
-        return response;
+        return productMapper.toDto(savedProduct);
     }
 
     @Override
-    public List<ProductDTO> getProducts() {
+    @Transactional(readOnly = true)
+    public ProductDTO getProductById(UUID productId) {
 
-        List<Product> products = productRepository.findAll();
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> ResourceNotFoundException.of("Product", productId));
 
-        return products.stream()
-                .map(product -> {
-
-                    ProductDTO productDTO = new ProductDTO();
-
-                    productDTO.setId(product.getId());
-                    productDTO.setName(product.getName());
-
-                    return productDTO;
-
-                }).toList();
+        return productMapper.toDto(product);
     }
 
     @Override
-    public Product mapToProductEntity(ProductDTO productDTO) {
+    @Transactional(readOnly = true)
+    public Page<ProductDTO> getProducts(
+            UUID categoryId,
+            UUID categoryTypeId,
+            String brand,
+            BigDecimal minPrice,
+            BigDecimal maxPrice,
+            String keyword,
+            Pageable pageable
+    ) {
 
-        Product product = new Product();
-
-        product.setName(productDTO.getName());
-        product.setDescription(productDTO.getDescription());
-        product.setPrice(productDTO.getPrice());
-        product.setBrand(productDTO.getBrand());
-        product.setIsNewArrival(productDTO.isNewArrival());
-
-        product.setProductVariantList(
-                mapToProductVariants(
-                        productDTO.getProductVariants(),
-                        product
-                )
+        Page<Product> products = productRepository.findAll(
+                ProductSpecification.filterBy(categoryId, categoryTypeId, brand, minPrice, maxPrice, keyword),
+                pageable
         );
 
-        product.setListResources(
-                mapToProductResources(
-                        productDTO.getProductResources(),
-                        product
-                )
-        );
-
-        return product;
+        return products.map(productMapper::toDto);
     }
 
     @Override
-    public ProductDTO mapToProductDTO(Product product) {
+    public ProductDTO updateProduct(UUID productId, ProductDTO productDTO) {
 
-        return ProductDTO.builder()
-                .id(product.getId())
-                .name(product.getName())
-                .description(product.getDescription())
-                .price(product.getPrice())
-                .brand(product.getBrand())
-                .isNewArrival(product.getIsNewArrival())
-                .productVariants(
-                        mapToProductVariantDTOs(
-                                product.getProductVariantList()
-                        )
-                )
-                .productResources(
-                        mapToProductResourceDTOs(
-                                product.getListResources()
-                        )
-                )
-                .build();
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> ResourceNotFoundException.of("Product", productId));
+
+        Category category = categoryRepository.findById(productDTO.getCategoryId())
+                .orElseThrow(() -> ResourceNotFoundException.of("Category", productDTO.getCategoryId()));
+
+        CategoryType categoryType = categoryTypeRepository.findById(productDTO.getCategoryTypeId())
+                .orElseThrow(() -> ResourceNotFoundException.of("CategoryType", productDTO.getCategoryTypeId()));
+
+        productMapper.updateEntity(product, productDTO, category, categoryType);
+
+        Product updatedProduct = productRepository.save(product);
+
+        return productMapper.toDto(updatedProduct);
     }
 
     @Override
-    public List<ProductVariant> mapToProductVariants(
-            List<ProductVariantDTO> productVariantDTOList,
-            Product product
-    ) {
+    public void deleteProduct(UUID productId) {
 
-        if (productVariantDTOList == null) {
-            return List.of();
-        }
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> ResourceNotFoundException.of("Product", productId));
 
-        return productVariantDTOList.stream()
-                .map(productVariantDTO -> {
-
-                    ProductVariant productVariant = new ProductVariant();
-
-                    productVariant.setColor(productVariantDTO.getColor());
-                    productVariant.setSize(productVariantDTO.getSize());
-                    productVariant.setStockQuantity(
-                            productVariantDTO.getStockQuantity()
-                    );
-
-                    productVariant.setProduct(product);
-
-                    return productVariant;
-
-                })
-                .toList();
-    }
-
-    @Override
-    public List<ProductVariantDTO> mapToProductVariantDTOs(
-            List<ProductVariant> productVariants
-    ) {
-
-        if (productVariants == null) {
-            return List.of();
-        }
-
-        return productVariants.stream()
-                .map(productVariant -> {
-                            ProductVariantDTO productVariantDTO = new ProductVariantDTO();
-                    productVariantDTO.setId(productVariant.getId());
-                    productVariantDTO.setColor(productVariant.getColor());
-                    productVariantDTO.setSize(productVariant.getSize());
-                    productVariantDTO.setStockQuantity(productVariant.getStockQuantity());
-                    return productVariantDTO;
-                        }
-                )
-                .toList();
-    }
-
-    @Override
-    public List<ProductResource> mapToProductResources(
-            List<ProductResourceDTO> productResourceDTOList,
-            Product product
-    ) {
-
-        if (productResourceDTOList == null) {
-            return List.of();
-        }
-
-        return productResourceDTOList.stream()
-                .map(productResourceDTO -> {
-
-                    ProductResource productResource = new ProductResource();
-
-                    productResource.setName(productResourceDTO.getName());
-                    productResource.setUrl(productResourceDTO.getUrl());
-                    productResource.setType(productResourceDTO.getType());
-                    productResource.setIsPrimary(
-                            productResourceDTO.isPrimary()
-                    );
-
-                    productResource.setProduct(product);
-
-                    return productResource;
-
-                })
-                .toList();
-    }
-
-    @Override
-    public List<ProductResourceDTO> mapToProductResourceDTOs(
-            List<ProductResource> productResources
-    ) {
-
-        if (productResources == null) {
-            return List.of();
-        }
-
-        return productResources.stream()
-                .map(productResource ->
-                        ProductResourceDTO.builder()
-                                .id(productResource.getId())
-                                .name(productResource.getName())
-                                .url(productResource.getUrl())
-                                .type(productResource.getType())
-                                .isPrimary(productResource.getIsPrimary())
-                                .build()
-                )
-                .toList();
+        productRepository.delete(product);
     }
 }

@@ -1,5 +1,7 @@
 package com.soumya.ecommerce.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,9 +17,11 @@ public class CategoryTypeDTO {
 
     private UUID id;
 
+    @NotBlank(message = "name is required")
     private String name;
 
-    private String code;
-
     private String description;
+
+    @NotNull(message = "categoryId is required")
+    private UUID categoryId;
 }

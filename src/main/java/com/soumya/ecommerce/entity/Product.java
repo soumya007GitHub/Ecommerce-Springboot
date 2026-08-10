@@ -36,7 +36,7 @@ public class Product {
     @Column(nullable = false)
     private Boolean isNewArrival;
 
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductVariant> productVariantList;
 
     @ManyToOne
@@ -47,8 +47,7 @@ public class Product {
     @JoinColumn(name="categoryType_id", nullable = false)
     private CategoryType categoryType;
 
-    @OneToMany(mappedBy = "product")
-    @Column(nullable = false)
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductResource> listResources;
 
     @Column
